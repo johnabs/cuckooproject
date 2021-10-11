@@ -1,0 +1,10 @@
+#+TITLE: Readme
+
+* Cuckoo search for multi-objective quadratic multi-knapsack problem
+
+
+
+* References of Interest
+https://www-sciencedirect-com.ezproxy.lib.purdue.edu/science/article/pii/S0957417417308217
+https://www-sciencedirect-com.ezproxy.lib.purdue.edu/science/article/pii/S1568494620310152?casa_token=36zagcogZDkAAAAA:weBL0ohC_du_vqfYamDz2vdrnaovcRWkk3fmKPcNFbJEGSD8VxhgxwEcBNNrNbOLx27p4mmqNg#tbl6
+https://www.researchgate.net/publication/250309677_A_Novel_Greedy_Quantum_Inspired_Cuckoo_Search_Algorithm_for_variable_sized_Bin_Packing_Problem
