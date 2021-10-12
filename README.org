@@ -2,6 +2,42 @@
 
 * Cuckoo search for multi-objective quadratic multi-knapsack problem
 
+* Example Julia Code
+#+begin_src julia :eval no-export :results output :exports both
+a=collect(1:10)
+for i in 1:10
+    if i%2==0
+        a[i]=a[i]^2
+    end
+end
+a
+#+end_src
+
+#+RESULTS:
+#+begin_example
+10-element Vector{Int64}:
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+10-element Vector{Int64}:
+   1
+   4
+   3
+  16
+   5
+  36
+   7
+  64
+   9
+ 100
+#+end_example
 
 
 * References of Interest
