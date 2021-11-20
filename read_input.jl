@@ -9,7 +9,7 @@ function convert_or_parse(number::Any)
 end
 
 
-function quadratic_formatting(Q::Any)
+function quadratic_formatting(Q::AbstractMatrix)
     nrows = size(Q, 1)
     ncols = size(Q, 2)
     for i in 1:nrows
