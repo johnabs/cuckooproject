@@ -38,6 +38,8 @@ function input(f = "data/Example.txt")
 
     Q = quadratic_formatting(Q)
 
+    Q = Q[1:n-1, :]
+
     #matrix with regular and quadratic coefficients
     coeff = vcat(b', Q)
 
@@ -46,3 +48,8 @@ function input(f = "data/Example.txt")
 
     return n, coeff, w
 end
+
+
+# n, c, w = input()
+
+# println("n:", n, "\nc:",c,"\nw:", w)
