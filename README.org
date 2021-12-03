@@ -11,6 +11,7 @@ SCHEDULED: <2021-10-20 Wed>
 - [X]  Make Levy Flights work in Binary Solution Space
 - [X] Implement quantum behavior
 - [X] Rewrite functions to work with matrices.
+- [X] Fix pareto filter code.
 - [ ] Make sure data is readable from stdin.
 - [ ] Implement cuckoo search method for knapsack data
 - [ ] Evaluate Performance
@@ -36,23 +37,25 @@ end
 
 * Pareto Filtering
 #+begin_src julia
-# Not working as expected.
-function pareto_filter(x::AbstractArray)
-	d,n=size(x)
-	io=repeat([true],n)
-	for i∈ 1:n-1, j∈ i:n
-		if i!=j && (io[i] || io[j])
-			xi=x[:,i]
-			xj=x[:,j]
-			if all(xi<= xj) && any(xi<xj)
-				io[j]=false
-			elseif all(xj<= xi) && any(xj<xi)
-				io[i]=false
-			end
-
-		end
-	end
-	return(x[:,io])
+#Working as expected.
+# Upgrading to work with new data struct.
+# In progress, needs testing.
+function pareto_filter(y::AbstractArray)
+x=reduce(hcat,map(z->z[2],y))
+d,n=size(x)
+io=repeat([true],n)
+    for i∈ 1:n-1, j∈ i:n
+        if i!=j && (io[i] || io[j])
+            xi=x[:,i]
+            xj=x[:,j]
+            if all(xi .<= xj) && any(xi .< xj)
+                io[j]=false
+            elseif all(xj .<= xi) && any(xj .< xi)
+                io[i]=false
+            end
+        end
+    end
+    return(y[:,io])
 end
 #+end_src
 
@@ -130,7 +133,6 @@ function ab(x,n)
     b=rand(x*n)+rand(x*n)*im
     return reshape(map(y->[a[y]/sqrt(abs2(a[y])+abs2(b[y])),b[y]/sqrt(abs2(a[y])+abs2(b[y]))],1:x*n),:,n)
 end
-qmat=ab(10,3)
 #+end_src
 
 * Quantum Unentanglement Function
@@ -140,7 +142,7 @@ qmat=ab(10,3)
 # Used to convert quantum matrix to probability matrix
 # for disentanglement.
 function prob_one(cuckoo)
-return abs2.(map(x->x[2],cuckoo))
+    return abs2.(map(x->x[2],cuckoo))
 end
 
 #Working as expected
@@ -174,9 +176,9 @@ end
 
 * Fitness Evaluation Function
 #+begin_src julia
-knapsacks = [1 0 0 1 0 1 0 0 0 0; 0 1 0 0 1 0 1 1 0 0; 0 0 1 0 0 0 0 0 1 1]
-profits = [91 78 22 4 48 85 46 81 3 26; 0 55 23 35 44 5 91 95 26 40; 0 0 92 11 20 43 71 83 27 65; 0 0 0 7 57 33 38 57 63 82; 0 0 0 0 100 87 91 83 44 48; 0 0 0 0 0 69 57 79 89 21; 0 0 0 0 0 0 9 40 22 26; 0 0 0 0 0 0 0 50 6 7; 0 0 0 0 0 0 0 0 71 52; 0 0 0 0 0 0 0 0 0 17]
-weights = [34 33 12 3 43 26 10 2 48 39]
+#knapsacks = [1 0 0 1 0 1 0 0 0 0; 0 1 0 0 1 0 1 1 0 0; 0 0 1 0 0 0 0 0 1 1]
+#profits = [91 78 22 4 48 85 46 81 3 26; 0 55 23 35 44 5 91 95 26 40; 0 0 92 11 20 43 71 83 27 65; 0 0 0 7 57 33 38 57 63 82; 0 0 0 0 100 87 91 83 44 48; 0 0 0 0 0 69 57 79 89 21; 0 0 0 0 0 0 9 40 22 26; 0 0 0 0 0 0 0 50 6 7; 0 0 0 0 0 0 0 0 71 52; 0 0 0 0 0 0 0 0 0 17]
+#weights = [34 33 12 3 43 26 10 2 48 39]
 
 function knapsack_capacity(knapsacks, weights)
     total_weight = sum(weights)
@@ -214,7 +216,7 @@ function multi_fitness_values(knapsacks, profits, weights, capacity)
     return [sum(profits_fitness_list), sum(weights_list), minimum(profits_fitness_list)]
 end
 
-# Takes list of pareto value
+# Takes list of pareto front values
 # and plots in 3D.
 function plot_pareto_front(front::Vector{Vector{Int64}})
     scatter(front...)

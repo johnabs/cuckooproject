@@ -1,5 +1,6 @@
-using Distributions.jl, Chain, Random, Plots
+using Distributions, Chain, Random, Plots, StatsBase
 
+# Working as expected
 normalize(x)=x/sum(x)
 function replace_sols(sol)
     flight=Levy(0,0.02)
@@ -9,30 +10,34 @@ function replace_sols(sol)
    return sol
 end
 
-function pareto_filter(x::AbstractArray)
-	d,n=size(x)
-	io=repeat([true],n)
-	for i∈ 1:n-1, j∈ i:n
-		if i!=j && (io[i] || io[j])
-			xi=x[:,i]
-			xj=x[:,j]
-			if all(xi<= xj) && any(xi<xj)
-				io[j]=false
-			elseif all(xj<= xi) && any(xj<xi)
-				io[i]=false
-			end
-
-		end
-	end
-	return(x[:,io])
+#Working as expected.
+# Upgrading to work with new data struct.
+# In progress, needs testing.
+function pareto_filter(y::AbstractArray)
+x=reduce(hcat,map(z->z[2],y))
+d,n=size(x)
+io=repeat([true],n)
+    for i∈ 1:n-1, j∈ i:n
+        if i!=j && (io[i] || io[j])
+            xi=x[:,i]
+            xj=x[:,j]
+            if all(xi .<= xj) && any(xi .< xj)
+                io[j]=false
+            elseif all(xj .<= xi) && any(xj .< xi)
+                io[i]=false
+            end
+        end
+    end
+    return(y[:,io])
 end
 
 # Working as expected
 function measure(qv)
-    return resize(map(x->rand()>abs2(qv[x][2]) ? 1 : 0, 1:length(qv)),:,size(qv)[2])
+    return reshape(map(x->rand()>abs2(qv[x][2]) ? 1 : 0, 1:length(qv)),:,size(qv)[2])
 end
 
 #Working, but unsure if output is valid.
+# Seems valid, needs test.
 function interfere(qv,sol,pa=pi/20)
     for i in 1:length(qv)
         scale=i_lookup(real(qv[i][1]),real(qv[i][2]),sol[i])
@@ -92,17 +97,20 @@ function ab(x,n)
     b=rand(x*n)+rand(x*n)*im
     return reshape(map(y->[a[y]/sqrt(abs2(a[y])+abs2(b[y])),b[y]/sqrt(abs2(a[y])+abs2(b[y]))],1:x*n),:,n)
 end
-qmat=ab(10,3)
 
-using Random
+# Working as expected
+# Used to convert quantum matrix to probability matrix
+# for disentanglement.
+function prob_one(cuckoo)
+    return abs2.(map(x->x[2],cuckoo))
+end
 
-qb = [0.91 0.78 0.22 0.4 0.48 0.85 0.46 0.81 0.3 0.26; 0 0.55 0.23 0.35 0.44 0.5 0.91 0.95 0.26 0.40; 0 0 0.92 0.11 0.20 0.43 0.71 0.83 0.27 0.65]
-knapsacks1 = [1 0 0 1 0 1 0 1 0 0; 1 1 0 1 1 0 1 1 0 0; 1 0 0 1 0 0 0 1 0 0]
-
+#Working as expected
+#Repairs invalid solutions
 function quantum_unentanglement(knapsacks1, qb)
     prob_sum, prob_list, r = 0, [], 0
     for i = 1:size(knapsacks1,2)
-        if sum([knapsacks2[j,i] for j = 1:size(knapsacks2,1)]) > 1
+        if sum([knapsacks1[j,i] for j = 1:size(knapsacks1,1)]) > 1
             cpd, index = 0, -1
             prob_sum = sum([qb[j,i] for j = 1:size(qb,1)])
             prob_list = [qb[j,i]/prob_sum for j = 1:size(qb,1)]
@@ -122,15 +130,12 @@ function quantum_unentanglement(knapsacks1, qb)
             end
         end
     end
-    return knapsacks1
+    return knapsacks1'
 end
 
-println(knapsacks1)
-println(quantum_unentanglement(knapsacks1, qb))
-
-knapsacks = [1 0 0 1 0 1 0 0 0 0; 0 1 0 0 1 0 1 1 0 0; 0 0 1 0 0 0 0 0 1 1]
-profits = [91 78 22 4 48 85 46 81 3 26; 0 55 23 35 44 5 91 95 26 40; 0 0 92 11 20 43 71 83 27 65; 0 0 0 7 57 33 38 57 63 82; 0 0 0 0 100 87 91 83 44 48; 0 0 0 0 0 69 57 79 89 21; 0 0 0 0 0 0 9 40 22 26; 0 0 0 0 0 0 0 50 6 7; 0 0 0 0 0 0 0 0 71 52; 0 0 0 0 0 0 0 0 0 17]
-weights = [34 33 12 3 43 26 10 2 48 39]
+#knapsacks = [1 0 0 1 0 1 0 0 0 0; 0 1 0 0 1 0 1 1 0 0; 0 0 1 0 0 0 0 0 1 1]
+#profits = [91 78 22 4 48 85 46 81 3 26; 0 55 23 35 44 5 91 95 26 40; 0 0 92 11 20 43 71 83 27 65; 0 0 0 7 57 33 38 57 63 82; 0 0 0 0 100 87 91 83 44 48; 0 0 0 0 0 69 57 79 89 21; 0 0 0 0 0 0 9 40 22 26; 0 0 0 0 0 0 0 50 6 7; 0 0 0 0 0 0 0 0 71 52; 0 0 0 0 0 0 0 0 0 17]
+#weights = [34 33 12 3 43 26 10 2 48 39]
 
 function knapsack_capacity(knapsacks, weights)
     total_weight = sum(weights)
@@ -138,8 +143,10 @@ function knapsack_capacity(knapsacks, weights)
     return 0.8*total_weight/no_of_knapsacks
 end
 
-capacity = knapsack_capacity(knapsacks, weights)
-
+#Computes values of objective functions
+# Returns all negative values to make this
+# a minimization problem across the board
+# values will be corrected during analyses.
 function multi_fitness_values(knapsacks, profits, weights, capacity)
     profits_fitness_list = []
     weights_list = []
@@ -166,4 +173,52 @@ function multi_fitness_values(knapsacks, profits, weights, capacity)
     return [sum(profits_fitness_list), sum(weights_list), minimum(profits_fitness_list)]
 end
 
-println(multi_fitness_values(knapsacks, profits, weights, capacity))
+# Takes list of pareto front values
+# and plots in 3D.
+function plot_pareto_front(front::Vector{Vector{Int64}})
+    scatter(front...)
+end
+
+# Takes measured solutions
+# and evaluates them, and returns a new data structure.
+function score_solutions(sols)
+ vals=map(x->multi_fitness_values(x,profits,weights,capacity),sols)
+ return(collect(zip(sols,vals)))
+end
+
+# Extracts score from solution
+# data structure.
+function get_vals(scored)
+ return reduce(hcat, map(x->x[2],scored))
+end
+
+# Not sure what I need this for.
+# Maybe just update pareto_filter function.
+function filter_sols(scored)
+    .
+end
+
+#data=read(file,params);
+#n_knapsacks=
+#n_items=
+#
+#cuckoo=ab(n_items,n_knapsacks)
+#capacity = knapsack_capacity(knapsacks, weights)
+
+function search(cuckoo, profits, weights, capacity,cycles, iter)
+    qb = prob_one(cuckoo)
+    sols=quantum_unentanglement.([measure(cuckoo) for _ in 1:cycles],qb)
+    nondominated=pareto_filter(multi_fitness_values(sols,profits,weights,capacity))
+    replaced=filter(x->x ! in nondominated, sols)
+    nondominated=pareto_filter(vcat(nondominated,replaced))
+    count=0
+    while count<iter
+        iq_mutate!(cuckoo)
+        eq_mutate!(cuckoo)
+        interfere!(cuckoo,sample(nondominated))
+        sols=[measure(cuckoo) for _ in 1:cycles]
+        nondominated=pareto_filter(vcat(nondominated,sols))
+        count+=1
+    end
+    return [cuckoo, nondominated]
+end
