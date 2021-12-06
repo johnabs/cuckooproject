@@ -196,6 +196,55 @@ function score_solutions(sols::Vector{Matrix{Int64}},profits,weights,capacity)::
     return temp
 end
 
+function search(c, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycles, iter)
+    cuckoo=deepcopy(c)
+    qb = prob_one(cuckoo)
+    sols=[measure(cuckoo) for _ in 1:cycles]
+    sols=map(x->quantum_unentanglement(x,qb),sols)
+    sols=score_solutions(sols,profits,weights,capacity)
+    nondominated=sols[pareto_filter(sols,capacity)]
+    replaced=map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))])
+    replaced=score_solutions(replaced,profits,weights,capacity)
+    nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
+    count=0
+    while count<iter
+        if(rand()<mut_prob1)
+            iq_mutate!(cuckoo)
+        end
+        if(rand()<mut_prob2)
+            eq_mutate!(cuckoo)
+        end
+        if(length(nondominated)>0)
+            interfere!(cuckoo,sample(nondominated)[1],pa)
+        end
+        qb = prob_one(cuckoo)
+        sols=[measure(cuckoo) for _ in 1:cycles]
+        sols=score_solutions(map(x->quantum_unentanglement(x,qb),sols),profits,weights,capacity)
+        nondominated=vcat(nondominated,sols)[pareto_filter(vcat(nondominated,sols),capacity)]
+        replaced=score_solutions(map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))]),profits,weights,capacity)
+        nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
+        count+=1
+    end
+    return unique(nondominated)
+end
+
+function rep(value,replicates)
+    return repeat([value],replicates)
+end
+
+end
+
+function quadratic_formatting(Q::AbstractMatrix)
+    nrows,ncols = size(Q)
+    #ncols = size(Q, 2)
+    for i in 1:nrows
+        temp = Q[i, 1:(ncols-i)]
+        Q[i, 1:i] = Q[i, (ncols - i + 1):ncols]
+        Q[i, (i+1):ncols] = temp
+    end
+    return Q
+end
+
 function parse_commandline()
     s = ArgParseSettings()
     @add_arg_table! s begin
@@ -245,18 +294,6 @@ function parse()
     return file, mut_prob1, mut_prob2, knapsacks, phaseangle, r
 end
 
-
-function quadratic_formatting(Q::AbstractMatrix)
-    nrows,ncols = size(Q)
-    #ncols = size(Q, 2)
-    for i in 1:nrows
-        temp = Q[i, 1:(ncols-i)]
-        Q[i, 1:i] = Q[i, (ncols - i + 1):ncols]
-        Q[i, (i+1):ncols] = temp
-    end
-    return Q
-end
-
 function input(f)
     df = CSV.read(f, DataFrame, header = 0, skipto=2, delim=" ", ignorerepeated=true, footerskip=4, silencewarnings=true)
     df = mapcols(col->replace(col, missing=>0), df)
@@ -274,42 +311,6 @@ function input(f)
     #weights of the items
     w = Array(df[nrow(df), :])
     return n, coeff, w
-end
-
-function search(c, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycles, iter)
-    cuckoo=deepcopy(c)
-    qb = prob_one(cuckoo)
-    sols=[measure(cuckoo) for _ in 1:cycles]
-    sols=map(x->quantum_unentanglement(x,qb),sols)
-    sols=score_solutions(sols,profits,weights,capacity)
-    nondominated=sols[pareto_filter(sols,capacity)]
-    replaced=map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))])
-    replaced=score_solutions(replaced,profits,weights,capacity)
-    nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
-    count=0
-    while count<iter
-        if(rand()<mut_prob1)
-            iq_mutate!(cuckoo)
-        end
-        if(rand()<mut_prob2)
-            eq_mutate!(cuckoo)
-        end
-        interfere!(cuckoo,sample(nondominated)[1],pa)
-        qb = prob_one(cuckoo)
-        sols=[measure(cuckoo) for _ in 1:cycles]
-        sols=score_solutions(map(x->quantum_unentanglement(x,qb),sols),profits,weights,capacity)
-        nondominated=vcat(nondominated,sols)[pareto_filter(vcat(nondominated,sols),capacity)]
-        replaced=score_solutions(map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))]),profits,weights,capacity)
-        nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
-        count+=1
-    end
-    return unique(nondominated)
-end
-
-end
-
-function rep(value,replicates)
-    return repeat([value],replicates)
 end
 
 function main()
