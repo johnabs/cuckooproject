@@ -198,8 +198,8 @@ end
 
 function search(n, k, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycles, iter)
     nondominated=[]
+    cuckoo=ab(n[1],k[1])
     while length(nondominated)==0
-        cuckoo=ab(n[1],k[1])
         qb = prob_one(cuckoo)
         sols=[measure(cuckoo) for _ in 1:cycles]
         sols=map(x->quantum_unentanglement(x,qb),sols)
@@ -208,6 +208,7 @@ function search(n, k, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycle
         replaced=map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))])
         replaced=score_solutions(replaced,profits,weights,capacity)
         nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
+        cuckoo=ab(n[1],k[1])
     end
     count=0
     while count<iter
@@ -252,11 +253,11 @@ function parse_commandline()
         "--mut_prob1", "-m"
             help = "mutation probability 1"
             arg_type = Float64
-            default = 0.5
+            default = 1.0
         "--mut_prob2", "-n"
             help = "mutation probability 1"
             arg_type = Float64
-            default = 0.5
+            default = 1.0
         "--knapsacks", "-k"
             help = "number of knapsacks"
             arg_type = Int
@@ -269,9 +270,9 @@ function parse_commandline()
             help = "Number of replicates"
             arg_type = Int64
             default = 1
-        # "--flag1"
-        #     help = "an option without argument, i.e. a flag"
-        #     action = :store_true
+         "--all", "-a"
+             help = "run all text files in directory with this config"
+             action => :store_true
         "file"
             help = "a positional argument"
             required = true
@@ -292,8 +293,20 @@ function parse()
     knapsacks = parsed_args["knapsacks"]
     phaseangle = parsed_args["phaseangle"]
     r = parsed_args["replicates"]
-    return file, mut_prob1, mut_prob2, knapsacks, phaseangle, r
+    a = parsed_args["all"]
+    return file, mut_prob1, mut_prob2, knapsacks, phaseangle, r, a
 end
+
+function combine_df(x)
+    series = [columns.(x)...]
+    series=[(series...)...]
+    rows = [[1:size(s)[1];] for s in series]
+    df = flatten(DataFrame(g=map(x->"x"*string(x),1:length(series)), s=series, r=rows), [:s, :r])
+    return unstack(df, :g, :s)
+end
+
+columns(M) = [ M[:,i] for i in 1:size(M, 2) ]
+
 
 function input(f)
     df = CSV.read(f, DataFrame, header = 0, skipto=2, delim=" ", ignorerepeated=true, footerskip=4, silencewarnings=true)
@@ -315,32 +328,60 @@ function input(f)
 end
 
 function main()
-    file, mut_prob1, mut_prob2, n_knapsacks, phaseangle, reps = parse()
-    n_items,profits,weights=input(file);
-    #cuckoo=[ab(n_items,n_knapsacks) for _ in 1:reps]
-    cap=knapsack_capacity(n_knapsacks, weights)
-    cycles=500
-    iter=200
-    @time outs=pmap(search,
-                    rep([n_items],reps),
-                    rep([n_knapsacks],reps),
-                    rep(profits,reps),
-                    rep(weights,reps),
-                    rep(mut_prob1,reps),
-                    rep(mut_prob2,reps),
-                    rep(phaseangle,reps),
-                    rep(cap,reps),
-                    rep(cycles,reps),
-                    rep(iter,reps)
-                    )
-    outs=filter(x->length(x)>0, outs)
-    outs2=map(y->mapreduce(x->[-x[2][1] -x[2][2] sum(x[2][3:end])],vcat,outs[y]),1:length(outs))
-    outs3=map(y->map(x->x[1],outs[y]),1:length(outs))
-    for i in 1:length(outs2)
-        CSV.write(file*"_pfront_"*string(n_knapsacks)*"_"*string(i)*".csv",Tables.table(outs2[i]))
-        CSV.write(file*"_sols_"*string(n_knapsacks)*"_"*string(i)*".csv",(data=outs3,))
+    file, mut_prob1, mut_prob2, n_knapsacks, phaseangle, reps,a = parse()
+    println(a)
+    if(a)
+        filelist=filter(x->occursin(r"^.*\.txt$",x),readdir("./data",join=true))[1:2]
+        for f in filelist
+            println(f)
+            n_items,profits,weights=input(f);
+            cap=knapsack_capacity(n_knapsacks, weights)
+            cycles=500
+            iter=200
+            @time outs=pmap(search,
+                            rep([n_items],reps),
+                            rep([n_knapsacks],reps),
+                            rep(profits,reps),
+                            rep(weights,reps),
+                            rep(mut_prob1,reps),
+                            rep(mut_prob2,reps),
+                            rep(phaseangle,reps),
+                            rep(cap,reps),
+                            rep(cycles,reps),
+                            rep(iter,reps)
+                            )
+            outs=filter(x->length(x)>0, outs)
+            outs2=combine_df(map(y->mapreduce(x->[-x[2][1] -x[2][2] sum(x[2][3:end])],vcat,outs[y]),1:length(outs)))
+            outs3=DataFrame(mapreduce(y->mean(map(x->x[1],outs[y])),hcat,1:length(outs)),:auto)
+            CSV.write(f*"_pfront_"*string(n_knapsacks)*".csv",outs2)
+            CSV.write(f*"_heatmaps_"*string(n_knapsacks)*".csv",outs3)
+        end
+    else
+        n_items,profits,weights=input(file);
+        cap=knapsack_capacity(n_knapsacks, weights)
+        cycles=500
+        iter=200
+        @time outs=pmap(search,
+                        rep([n_items],reps),
+                        rep([n_knapsacks],reps),
+                        rep(profits,reps),
+                        rep(weights,reps),
+                        rep(mut_prob1,reps),
+                        rep(mut_prob2,reps),
+                        rep(phaseangle,reps),
+                        rep(cap,reps),
+                        rep(cycles,reps),
+                        rep(iter,reps)
+                        )
+        outs=filter(x->length(x)>0, outs)
+        outs2=combine_df(map(y->mapreduce(x->[-x[2][1] -x[2][2] sum(x[2][3:end])],vcat,outs[y]),1:length(outs)))
+        outs3=DataFrame(mapreduce(y->mean(map(x->x[1],outs[y])),hcat,1:length(outs)),:auto)
+        CSV.write(file*"_pfront_"*string(n_knapsacks)*".csv",outs2)
+        CSV.write(file*"_heatmaps_"*string(n_knapsacks)*".csv",outs3)
     end
     #savefig(plot_pareto_front(out),file*"plot.png")
 end
 
 main()
+
+
