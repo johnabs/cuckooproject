@@ -196,16 +196,19 @@ function score_solutions(sols::Vector{Matrix{Int64}},profits,weights,capacity)::
     return temp
 end
 
-function search(c, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycles, iter)
-    cuckoo=deepcopy(c)
-    qb = prob_one(cuckoo)
-    sols=[measure(cuckoo) for _ in 1:cycles]
-    sols=map(x->quantum_unentanglement(x,qb),sols)
-    sols=score_solutions(sols,profits,weights,capacity)
-    nondominated=sols[pareto_filter(sols,capacity)]
-    replaced=map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))])
-    replaced=score_solutions(replaced,profits,weights,capacity)
-    nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
+function search(n, k, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycles, iter)
+    nondominated=[]
+    while length(nondominated)==0
+        cuckoo=ab(n[1],k[1])
+        qb = prob_one(cuckoo)
+        sols=[measure(cuckoo) for _ in 1:cycles]
+        sols=map(x->quantum_unentanglement(x,qb),sols)
+        sols=score_solutions(sols,profits,weights,capacity)
+        nondominated=sols[pareto_filter(sols,capacity)]
+        replaced=map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))])
+        replaced=score_solutions(replaced,profits,weights,capacity)
+        nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
+    end
     count=0
     while count<iter
         if(rand()<mut_prob1)
@@ -214,9 +217,7 @@ function search(c, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycles, 
         if(rand()<mut_prob2)
             eq_mutate!(cuckoo)
         end
-        if(length(nondominated)>0)
-            interfere!(cuckoo,sample(nondominated)[1],pa)
-        end
+        interfere!(cuckoo,sample(nondominated)[1],pa)
         qb = prob_one(cuckoo)
         sols=[measure(cuckoo) for _ in 1:cycles]
         sols=score_solutions(map(x->quantum_unentanglement(x,qb),sols),profits,weights,capacity)
@@ -316,12 +317,13 @@ end
 function main()
     file, mut_prob1, mut_prob2, n_knapsacks, phaseangle, reps = parse()
     n_items,profits,weights=input(file);
-    cuckoo=[ab(n_items,n_knapsacks) for _ in 1:reps]
+    #cuckoo=[ab(n_items,n_knapsacks) for _ in 1:reps]
     cap=knapsack_capacity(n_knapsacks, weights)
     cycles=500
     iter=200
     @time outs=pmap(search,
-                    cuckoo,
+                    rep([n_items],reps),
+                    rep([n_knapsacks],reps),
                     rep(profits,reps),
                     rep(weights,reps),
                     rep(mut_prob1,reps),
@@ -331,12 +333,13 @@ function main()
                     rep(cycles,reps),
                     rep(iter,reps)
                     )
+    outs=filter(x->length(x)>0, outs)
     outs2=map(y->mapreduce(x->[-x[2][1] -x[2][2] sum(x[2][3:end])],vcat,outs[y]),1:length(outs))
-    #outs3=map(y->map(x->x[1],outs[y]),1:length(outs))
+    outs3=map(y->map(x->x[1],outs[y]),1:length(outs))
     for i in 1:length(outs2)
-        CSV.write(file*"_pfront_"*string(i)*".csv",Tables.table(outs2[i]))
+        CSV.write(file*"_pfront_"*string(n_knapsacks)*"_"*string(i)*".csv",Tables.table(outs2[i]))
+        CSV.write(file*"_sols_"*string(n_knapsacks)*"_"*string(i)*".csv",(data=outs3,))
     end
-    #CSV.write(file*"solutions.csv",(data=outs3,))
     #savefig(plot_pareto_front(out),file*"plot.png")
 end
 
