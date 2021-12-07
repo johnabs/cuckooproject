@@ -145,10 +145,11 @@ end
 
 #Working as expected
 #Repairs invalid solutions
-function quantum_unentanglement(knapsack, q)
+function quantum_unentanglement(knapsack, q, profits, weight, capacity)
     knapsacks1=knapsack'
     qb=q'
-    prob_sum, prob_list, r = 0, [], 0
+    weights = weight'
+    prob_sum, prob_list, r, p_over_w = 0, [], 0, []
     for i = 1:size(knapsacks1,2)
         if sum([knapsacks1[j,i] for j = 1:size(knapsacks1,1)]) > 1
             cpd, index = 0, -1
@@ -170,7 +171,18 @@ function quantum_unentanglement(knapsack, q)
             end
         end
     end
-    return knapsacks1'
+    for i=1:size(knapsacks1,1)
+        if sum([knapsacks1[i,j]*weights[1,j] for j = 1:size(knapsacks1,2)]) > capacity
+            p_over_w = [(profits[1,j]/weights[1,j])*knapsacks1[i,j] for j = 1:size(knapsacks1,2)]
+            sortedindicespw = sortperm(p_over_w)
+            k = 1
+            while (sum([knapsacks1[i,j]*weights[1,j] for j = 1:size(knapsacks1,2)]) > capacity) && (k <= length(sortedindicespw))
+                knapsacks1[i,sortedindicespw[k]] = 0
+                k = k + 1
+            end
+        end
+    end
+    return knapsacks1
 end
 #+end_src
 
