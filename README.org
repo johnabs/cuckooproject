@@ -175,14 +175,18 @@ function quantum_unentanglement(knapsack, q, profits, weight, capacity)
         if sum([knapsacks1[i,j]*weights[1,j] for j = 1:size(knapsacks1,2)]) > capacity
             p_over_w = [(profits[1,j]/weights[1,j])*knapsacks1[i,j] for j = 1:size(knapsacks1,2)]
             sortedindicespw = sortperm(p_over_w)
-            k = 1
-            while (sum([knapsacks1[i,j]*weights[1,j] for j = 1:size(knapsacks1,2)]) > capacity) && (k <= length(sortedindicespw))
-                knapsacks1[i,sortedindicespw[k]] = 0
-                k = k + 1
+            z = 0
+            for k =1:length(sortedindicespw)
+                if (sum([knapsacks1[i,j]*weights[1,j] for j = 1:size(knapsacks1,2)]) <= capacity)
+                    z = 1
+                end
+                if p_over_w[sortedindicespw[k]] > 0 && z == 0
+                    knapsacks1[i,sortedindicespw[k]] = 0
+                end
             end
         end
     end
-    return knapsacks1
+    return knapsacks1'
 end
 #+end_src
 
