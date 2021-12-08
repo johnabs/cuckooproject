@@ -4,13 +4,13 @@ using Distributions, Chain, Random, Plots, StatsBase, CSV, DataFrames, ArgParse,
 
 # Working as expected
 normalize(x)=x/sum(x)
-function replace_sols(sol,qb)
+function replace_sols(sol,qb,profits,weights,capacity)
     temp=sol[1]
     flight=Levy(0,0.02)
     dist=sample(5:length(temp),Weights(normalize(rand(flight,length(temp)-5))))
     ind=sample(1:length(temp),dist,replace=false)
     temp[ind]=1 .- temp[ind]
-   return quantum_unentanglement(temp,qb)
+   return quantum_unentanglement(temp,qb,profits,weights,capacity)
 end
 
 #Working as expected.
@@ -111,10 +111,11 @@ end
 
 #Working as expected
 #Repairs invalid solutions
-function quantum_unentanglement(knapsack, q)
+function quantum_unentanglement(knapsack, q, profits, weight, capacity)
     knapsacks1=knapsack'
     qb=q'
-    prob_sum, prob_list, r = 0, [], 0
+    weights = weight'
+    prob_sum, prob_list, r, p_over_w = 0, [], 0, []
     for i = 1:size(knapsacks1,2)
         if sum([knapsacks1[j,i] for j = 1:size(knapsacks1,1)]) > 1
             cpd, index = 0, -1
@@ -136,8 +137,16 @@ function quantum_unentanglement(knapsack, q)
             end
         end
     end
+
+    for i in 1:size(knapsacks1,1)
+        while sum(knapsacks1[i,:].*weights')>capacity
+            p_over_w = replace((profits[1,:].+1 ./weights'.*knapsacks1[i,:]),0=>Inf)
+            knapsacks1[i,findmin(p_over_w)[2]] = 0
+        end
+    end
     return knapsacks1'
 end
+
 
 #Does what it says on the tin.
 function knapsack_capacity(knapsacks, weights)
@@ -202,10 +211,10 @@ function search(n, k, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycle
     while length(nondominated)==0
         qb = prob_one(cuckoo)
         sols=[measure(cuckoo) for _ in 1:cycles]
-        sols=map(x->quantum_unentanglement(x,qb),sols)
+        sols=map(x->quantum_unentanglement(x,qb,profits,weights,capacity),sols)
         sols=score_solutions(sols,profits,weights,capacity)
         nondominated=sols[pareto_filter(sols,capacity)]
-        replaced=map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))])
+        replaced=map(y->replace_sols(y,qb,profits,weights,capacity),sols[map(x->!x,pareto_filter(sols,capacity))])
         replaced=score_solutions(replaced,profits,weights,capacity)
         nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
         cuckoo=ab(n[1],k[1])
@@ -221,9 +230,9 @@ function search(n, k, profits, weights, mut_prob1, mut_prob2, pa, capacity,cycle
         interfere!(cuckoo,sample(nondominated)[1],pa)
         qb = prob_one(cuckoo)
         sols=[measure(cuckoo) for _ in 1:cycles]
-        sols=score_solutions(map(x->quantum_unentanglement(x,qb),sols),profits,weights,capacity)
+        sols=score_solutions(map(x->quantum_unentanglement(x,qb,profits,weights,capacity),sols),profits,weights,capacity)
         nondominated=vcat(nondominated,sols)[pareto_filter(vcat(nondominated,sols),capacity)]
-        replaced=score_solutions(map(y->replace_sols(y,qb),sols[map(x->!x,pareto_filter(sols,capacity))]),profits,weights,capacity)
+        replaced=score_solutions(map(y->replace_sols(y,qb,profits,weights,capacity),sols[map(x->!x,pareto_filter(sols,capacity))]),profits,weights,capacity)
         nondominated=vcat(nondominated,replaced)[pareto_filter(vcat(nondominated,replaced),capacity)]
         count+=1
     end
