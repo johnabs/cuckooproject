@@ -50,6 +50,6 @@ function input(f = "data/Example.txt")
 end
 
 
-# n, c, w = input()
+n, c, w = input("./data/r_100_75_4.txt")
 
-# println("n:", n, "\nc:",c,"\nw:", w)
+println("n:", n, "\nc:",c,"\nw:", w)
