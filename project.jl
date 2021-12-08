@@ -140,7 +140,7 @@ function quantum_unentanglement(knapsack, q, profits, weight, capacity)
 
     for i in 1:size(knapsacks1,1)
         while sum(knapsacks1[i,:].*weights')>capacity
-            p_over_w = replace((profits[1,:].+1 ./weights'.*knapsacks1[i,:]),0=>Inf)
+            p_over_w = replace(((profits[1,:].+1) ./weights'.*knapsacks1[i,:]),0=>Inf)
             knapsacks1[i,findmin(p_over_w)[2]] = 0
         end
     end
