@@ -42,7 +42,7 @@ Where file.txt is any of the problem instances you want to run (must be in the d
 So a more complete example would look like this:
 
 #+begin_src bash
-julia -p auto project.jl -m 0.7 -n 0.6 -k 10 -p 1.5707936 -r 30 -c 100 -i 1000 -a random_filename_doesn't_matter_with_the_-a_flag
+julia -p auto project.jl -m 0.7 -n 0.6 -k 10 -p 1.5707936 -r 30 -c 100 -i 1000 -a some_filename_not_used
 #+end_src
 
 When providing the -a flag, the input filename no longer matters (but is required in general for script safety), as it will run over every file in the data folder with the same parameters. The -a flag also improves runtime similar to the -p auto flag for julia, as we can avoid the very computationally expensive recompiling of the project.jl script, due to Julia's lack of support for generating compiled binaries.
