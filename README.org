@@ -28,7 +28,7 @@ Install [Julia version 1.6.4](https://julialang.org/downloads/#long_term_support
 julia -p auto project.jl data/file.txt
 #+end_src
 
-Where file.txt is any of the problem instances you want to run (must be in the data file within the project directory if using the -a flag). The -p auto flag that comes after the julia command tells the process to utilize all available threads on the machine to take advantage of the multithreading optimizations we created. This first command will provide the default running conditions on a single specified file. However,these can be tweaked with the following flags:
+Where file.txt is any of the problem instances you want to run (must be in the data file within the project directory if using the -a flag). The -p auto flag that comes after the julia command tells the process to utilize all available threads on the machine to take advantage of the multithreading optimizations we implemented. This first command will provide the default running conditions on a single specified file. However, these can be tweaked with the following flags:
 
 - m probability of mutating the cuckoo by inverting a random qubit
 - n probability of mutating the cuckoo by swapping two random qubits
