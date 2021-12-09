@@ -358,7 +358,7 @@ function parse()
     r = parsed_args["replicates"]
     a = parsed_args["all"]
     c = parsed_args["cycles"]
-    i = parsed_args["iter"]
+    i = parsed_args["iterations"]
     return file, mut_prob1, mut_prob2, knapsacks, phaseangle, r, a, c, i
 end
 
