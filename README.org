@@ -24,7 +24,9 @@ SCHEDULED: <2021-10-20 Wed>
 * How to run the code:
 Install [Julia version 1.6.4](https://julialang.org/downloads/#long_term_support_release). Follow the guide and make sure to add the julia binary to your PATH. Open Julia and install the packages you see below in the Imports section by using the Pkg.add(), command, or any other method you prefer. Finally, exit Juila, and run the following line in some POSIX compliant shell:
 
-    julia -p auto project.jl data/file.txt
+#+begin_src bash
+julia -p auto project.jl data/file.txt
+#+end_src
 
 Where file.txt is any of the problem instances you want to run (must be in the data file within the project directory if using the -a flag). The -p auto flag that comes after the julia command tells the process to utilize all available threads on the machine to take advantage of the multithreading optimizations we created. This first command will provide the default running conditions on a single specified file. However,these can be tweaked with the following flags:
 
@@ -39,7 +41,9 @@ Where file.txt is any of the problem instances you want to run (must be in the d
 
 So a more complete example would look like this:
 
-    julia -p auto project.jl -m 0.7 -n 0.6 -k 10 -p pi/2 -r 30 -c 100 -i 1000 -a random_filename_doesn't_matter_with_the_-a_flag
+#+begin_src bash
+julia -p auto project.jl -m 0.7 -n 0.6 -k 10 -p 1.5707936 -r 30 -c 100 -i 1000 -a random_filename_doesn't_matter_with_the_-a_flag
+#+end_src
 
 When providing the -a flag, the input filename no longer matters (but is required in general for script safety), as it will run over every file in the data folder with the same parameters. The -a flag also improves runtime similar to the -p auto flag for julia, as we can avoid the very computationally expensive recompiling of the project.jl script, due to Julia's lack of support for generating compiled binaries.
 
