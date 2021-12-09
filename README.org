@@ -30,14 +30,14 @@ julia -p auto project.jl data/file.txt
 
 Where file.txt is any of the problem instances you want to run (must be in the data file within the project directory if using the -a flag). The -p auto flag that comes after the julia command tells the process to utilize all available threads on the machine to take advantage of the multithreading optimizations we created. This first command will provide the default running conditions on a single specified file. However,these can be tweaked with the following flags:
 
-    -m probability of mutating the cuckoo by inverting a random qubit
-    -n probability of mutating the cuckoo by swapping two random qubits
-    -k number of knapsacks, defaults to 3
-    -p phase angle, defaults to pi/20
-    -r the number of replicates for statistical tests, defaults to 1
-    -c number of solutions to sample per iteration, defaults to 500
-    -i the number of iterations, defaults to 200
-    -a runs all the files in the ./data directory
+- m probability of mutating the cuckoo by inverting a random qubit
+- n probability of mutating the cuckoo by swapping two random qubits
+- k number of knapsacks, defaults to 3
+- p phase angle, defaults to pi/20
+- r the number of replicates for statistical tests, defaults to 1
+- c number of solutions to sample per iteration, defaults to 500
+- i the number of iterations, defaults to 200
+- a runs all the files in the ./data directory
 
 So a more complete example would look like this:
 
