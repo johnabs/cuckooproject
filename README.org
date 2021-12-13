@@ -22,7 +22,7 @@ SCHEDULED: <2021-10-20 Wed>
 - [-] Make plots and write report
 
 * How to run the code:
-Install [[https://julialang.org/downloads/#long_term_support_release][Julia 1.6.4]]. Follow the guide and make sure to add the julia binary to your PATH. Open Julia and install the packages you see below in the Imports section by using the Pkg.add(), command, or any other method you prefer. Finally, exit Juila, and run the following line in some POSIX compliant shell:
+Install [[https://julialang.org/downloads/#long_term_support_release][Julia 1.6.4]]. Follow the guide and make sure to add the julia binary to your PATH. Open Julia and install the packages you see below in the Imports section by using the Pkg.add(), command, or any other method you prefer. Finally, exit Juila, change to the cuckooproject directory and run the following line in some POSIX compliant shell:
 
 #+begin_src bash
 julia -p auto project.jl data/file.txt
