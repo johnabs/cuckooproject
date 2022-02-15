@@ -287,6 +287,7 @@ end
 #+end_src
 
 * Search Algorithm
+Need to check impact by increasing the number of iterations
 #+begin_src julia
 # The actual search algorithm, written to be as pure as possible so it can be trivially parallelized.
 # Takes number of items, number of knapsacks, etc. as input, returns the unique values discovered
@@ -352,6 +353,7 @@ end
 #+end_src
 
 * CLI Argument Handling, Data Import and Export
+Maybe play around with parameters a but more? (also, check the impact of phase angle on the code performance)
 #+begin_src julia
 #Takes the quadratic coefficients and formats them
 #to work with the multi_fitness_function written
