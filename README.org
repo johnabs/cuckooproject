@@ -55,6 +55,7 @@ using Distributions, Chain, Random, Plots, StatsBase, CSV, DataFrames, ArgParse,
 #+end_src
 
 * Levy Flights
+Why are we giving the lower limit of bit flips as 5? Can't it be 0 to generate true randomness?
 #+begin_src julia
 # Does what is says on the tin.
 normalize(x)=x/sum(x)
@@ -220,6 +221,7 @@ end
 #+end_src
 
 * Fitness Evaluation Function
+Currently it is using maximum profit-over-weight-ratio of the knapsack items as a penalty. We can try death penalty, repair strategy to see its effect on solution quality and convergence speed.
 #+begin_src julia
 #Does what it says on the tin.
 function knapsack_capacity(knapsacks, weights)
