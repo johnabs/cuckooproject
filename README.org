@@ -221,7 +221,7 @@ end
 #+end_src
 
 * Fitness Evaluation Function
-Currently it is using maximum profit-over-weight-ratio of the knapsack items as a penalty. We can try death penalty, repair strategy to see its effect on solution quality and convergence speed.
+Currently it is using repair strategy for fitness value calculation. Can be tried with maximum profit-over-weight-ratio penalty or death penalty to see its effect on solution quality and convergence speed.
 #+begin_src julia
 #Does what it says on the tin.
 function knapsack_capacity(knapsacks, weights)
